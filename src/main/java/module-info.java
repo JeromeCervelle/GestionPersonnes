@@ -1,6 +1,8 @@
 module fr.limoges.valadon.gestionpersonnes {
     requires javafx.controls;
     requires javafx.fxml;
+    requires java.prefs;
+    requires java.xml.bind;
 
 
     opens fr.limoges.valadon.gestionpersonnes to javafx.fxml;
