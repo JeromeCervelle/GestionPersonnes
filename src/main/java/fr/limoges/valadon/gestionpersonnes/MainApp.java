@@ -1,20 +1,27 @@
 package fr.limoges.valadon.gestionpersonnes;
 
-import java.io.IOException;
-
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import fr.limoges.valadon.gestionpersonnes.controller.PersonEditDialogController;
+import fr.limoges.valadon.gestionpersonnes.controller.PersonOverviewController;
+import fr.limoges.valadon.gestionpersonnes.controller.RootLayoutController;
+import fr.limoges.valadon.gestionpersonnes.model.Person;
 import javafx.application.Application;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Alert.AlertType;
 import javafx.scene.image.Image;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.BorderPane;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
-import fr.limoges.valadon.gestionpersonnes.model.Person;
-import fr.limoges.valadon.gestionpersonnes.controller.PersonEditDialogController;
-import fr.limoges.valadon.gestionpersonnes.controller.PersonOverviewController;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.prefs.Preferences;
 
 public class MainApp extends Application {
 
@@ -31,15 +38,7 @@ public class MainApp extends Application {
      */
     public MainApp() {
         // Add some sample data
-        personData.add(new Person("Hans", "Muster"));
-        personData.add(new Person("Ruth", "Mueller"));
-        personData.add(new Person("Heinz", "Kurz"));
-        personData.add(new Person("Cornelia", "Meier"));
-        personData.add(new Person("Werner", "Meyer"));
-        personData.add(new Person("Lydia", "Kunz"));
-        personData.add(new Person("Anna", "Best"));
-        personData.add(new Person("Stefan", "Meier"));
-        personData.add(new Person("Martin", "Mueller"));
+
     }
 
     /**
@@ -64,7 +63,8 @@ public class MainApp extends Application {
     }
 
     /**
-     * Initializes the root layout.
+     * Initializes the root layout and tries to load the last opened
+     * person file.
      */
     public void initRootLayout() {
         try {
@@ -76,9 +76,20 @@ public class MainApp extends Application {
             // Show the scene containing the root layout.
             Scene scene = new Scene(rootLayout);
             primaryStage.setScene(scene);
+
+            // Give the controller access to the main app.
+            RootLayoutController controller = loader.getController();
+            controller.setMainApp(this);
+
             primaryStage.show();
         } catch (IOException e) {
             e.printStackTrace();
+        }
+
+        // Try to load last opened person file.
+        File file = getPersonFilePath();
+        if (file != null) {
+            loadPersonDataFromFile(file);
         }
     }
 
@@ -131,10 +142,10 @@ public class MainApp extends Application {
             PersonEditDialogController controller = loader.getController();
             controller.setDialogStage(dialogStage);
             controller.setPerson(person);
-            
+
             // Set the dialog icon.
             dialogStage.getIcons().add(new Image("file:resources/images/edit.png"));
-
+            
             // Show the dialog and wait until the user closes it
             dialogStage.showAndWait();
 
@@ -142,6 +153,95 @@ public class MainApp extends Application {
         } catch (IOException e) {
             e.printStackTrace();
             return false;
+        }
+    }
+    
+    /**
+     * Returns the person file preference, i.e. the file that was last opened.
+     * The preference is read from the OS specific registry. If no such
+     * preference can be found, null is returned.
+     * 
+     * @return
+     */
+    public File getPersonFilePath() {
+        Preferences prefs = Preferences.userNodeForPackage(MainApp.class);
+        String filePath = prefs.get("filePath", null);
+        if (filePath != null) {
+            return new File(filePath);
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * Sets the file path of the currently loaded file. The path is persisted in
+     * the OS specific registry.
+     * 
+     * @param file the file or null to remove the path
+     */
+    public void setPersonFilePath(File file) {
+        Preferences prefs = Preferences.userNodeForPackage(MainApp.class);
+        if (file != null) {
+            prefs.put("filePath", file.getPath());
+
+            // Update the stage title.
+            primaryStage.setTitle("AddressApp - " + file.getName());
+        } else {
+            prefs.remove("filePath");
+
+            // Update the stage title.
+            primaryStage.setTitle("AddressApp");
+        }
+    }
+    
+    /**
+     * Loads person data from the specified file. The current person data will
+     * be replaced.
+     * 
+     * @param file
+     */
+    public void loadPersonDataFromFile(File file) {
+        try {
+            ObjectMapper objectMapper = new ObjectMapper();
+            objectMapper.registerModule(new JavaTimeModule());
+            Person[] persons = objectMapper.readValue(file, Person[].class);
+
+            // Afficher les détails de chaque personne chargée depuis le fichier
+            for (Person person : persons) {
+                personData.add(person);
+            }
+
+            // Save the file path to the registry.
+            setPersonFilePath(file);
+
+        } catch (Exception e) { // catches ANY exception
+        	Alert alert = new Alert(AlertType.ERROR);
+        	alert.setTitle("Error");
+        	alert.setHeaderText("Could not load data");
+        	alert.setContentText("Could not load data from file:\n" + file.getPath());
+        	alert.showAndWait();
+        }
+    }
+
+    /**
+     * Saves the current person data to the specified file.
+     * 
+     * @param file
+     */
+    public void savePersonDataToFile(File file) {
+
+        try {
+            ObjectMapper objectMapper = new ObjectMapper();
+            objectMapper.registerModule(new JavaTimeModule());
+            objectMapper.writeValue(file, personData);
+
+        } catch (Exception e) { // catches ANY exception
+        	Alert alert = new Alert(AlertType.ERROR);
+        	alert.setTitle("Error");
+        	alert.setHeaderText("Could not save data");
+        	alert.setContentText("Could not save data to file:\n" + file.getPath());
+        	e.printStackTrace();
+        	alert.showAndWait();
         }
     }
 
