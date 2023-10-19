@@ -39,12 +39,12 @@
                       <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
                     </rowConstraints>
                      <children>
-                        <Label text="First Name" />
-                        <Label text="Last Name" GridPane.rowIndex="1" />
-                        <Label text="Street" GridPane.rowIndex="2" />
-                        <Label text="City" GridPane.rowIndex="3" />
-                        <Label text="Postal Code" GridPane.rowIndex="4" />
-                        <Label text="Birthday" GridPane.rowIndex="5" />
+                        <Label text="Prénom" />
+                        <Label text="Nom" GridPane.rowIndex="1" />
+                        <Label text="Adresse" GridPane.rowIndex="2" />
+                        <Label text="Ville" GridPane.rowIndex="3" />
+                        <Label text="Code postal" GridPane.rowIndex="4" />
+                        <Label text="Date de naissance" GridPane.rowIndex="5" />
                         <Label text="Label" GridPane.columnIndex="1" />
                         <Label text="Label" GridPane.columnIndex="1" GridPane.rowIndex="1" />
                         <Label text="Label" GridPane.columnIndex="1" GridPane.rowIndex="2" />
